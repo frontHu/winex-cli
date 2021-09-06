@@ -13,7 +13,6 @@ import crypto from 'crypto';
 //@ts-ignore
 import Package from '@lerna/package';
 //@ts-ignore
-// import npmDistTag from '@lerna/npm-dist-tag';
 import getRepoInfo from 'git-repo-info';
 import packDirectory from './pack-directory';
 import exec from '../utils/exec';
@@ -118,6 +117,8 @@ export default async function release(cwd = process.cwd(), args: any): Promise<v
       if (isRelease && isBeta)
         printErrorAndExit('Release failed, there can only be one --beta and --release.');
 
+      versionCliArgs.tagPrefix = `${pack.name}@`;
+
       if (isRelease) {
         const relaseConfirm: { release: boolean } = await runPrompts({
           type: 'confirm',
@@ -152,17 +153,10 @@ export default async function release(cwd = process.cwd(), args: any): Promise<v
       // Build
       if (!args.skipBuild) {
         logStep(`build: ${pkg.name}`);
-        let build;
-        if (!args.oldBuild) {
-          process.env.APP_ROOT = pkg.rootPath;
-          process.env.APP_TYPE = 'material';
-          const vmiCli = require.resolve('@winfe/vmi/bin/vmi');
-          await exec(vmiCli, ['build', ...process.argv.slice(3)]);
-        } else {
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
-          build = require('../build/index').default;
-          await build([pkg.rootPath]);
-        }
+        process.env.APP_ROOT = pkg.rootPath;
+        process.env.APP_TYPE = 'material';
+        const vmiCli = require.resolve('@winfe/vmi/bin/vmi');
+        await exec(vmiCli, ['build', ...process.argv.slice(3)]);
       } else {
         logStep('build is skipped, since args.skipBuild is supplied');
       }
